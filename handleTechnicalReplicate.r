@@ -38,3 +38,34 @@ hom_obj$genotype <- "HOM"
 het1_obj$genotype <- "HET"
 het2_obj$genotype <- "HET"
 wt_obj$genotype <- "WT"
+
+
+#option 2
+library(Matrix)
+
+sum_technical_reps_fast <- function(mat1, mat2) {
+  # 1. Identify which barcodes are in both runs, and which are unique to one
+  common_barcodes <- intersect(colnames(mat1), colnames(mat2))
+  only_run1 <- setdiff(colnames(mat1), colnames(mat2))
+  only_run2 <- setdiff(colnames(mat2), colnames(mat1))
+  
+  message("Common cells: ", length(common_barcodes))
+  message("Unique to Run 1: ", length(only_run1))
+  message("Unique to Run 2: ", length(only_run2))
+
+  # 2. Sum the counts for cells found in both runs
+  # The '+' operator is highly optimized for sparse matrices (dgCMatrix)
+  summed_common <- mat1[, common_barcodes] + mat2[, common_barcodes]
+  
+  # 3. Combine the summed cells with the cells that only appeared in one run
+  # cbind is much faster than index-based assignment
+  combined_mat <- cbind(summed_common, mat1[, only_run1], mat2[, only_run2])
+  
+  return(combined_mat)
+}
+
+# Run this for your 4 genotypes
+hom_total.data  <- sum_technical_reps_fast(hom1.data, hom2.data)
+het1_total.data <- sum_technical_reps_fast(het1.data, het2.data)
+het2_total.data <- sum_technical_reps_fast(het02_1.data, het02_2.data)
+wt_total.data   <- sum_technical_reps_fast(wt1.data, wt2.data)
